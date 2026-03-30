@@ -5,10 +5,18 @@ from datetime import datetime
 import os
 
 # SQLite database file
-# SQLite database file - uses environment variable for production flexibility
+# SQLite/PostgreSQL database file - uses environment variable for production flexibility
 DB_URL = os.environ.get("DATABASE_URL", "sqlite:///./zurastock.db")
 
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+# Fix for SQLAlchemy 1.4+: PostgreSQL URLs must start with 'postgresql://'
+if DB_URL.startswith("postgres://"):
+    DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
+
+# SQLite requires 'check_same_thread=False', PostgreSQL DOES NOT.
+if "sqlite" in DB_URL:
+    engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
