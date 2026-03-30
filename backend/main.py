@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import os
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine, Base, User, Watchlist, Portfolio, init_db, get_db
+from .database import SessionLocal, engine, Base, User, Watchlist, Portfolio, init_db, get_db
 import math
 import pandas as pd
 import ta
@@ -15,8 +15,8 @@ import json
 from contextlib import asynccontextmanager
 import numpy as np
 from textblob import TextBlob
-from ml_engine import MLEngine
-from ml_assistant import MLAssistant
+from .ml_engine import MLEngine
+from .ml_assistant import MLAssistant
 from datetime import datetime, time
 import pytz
 
