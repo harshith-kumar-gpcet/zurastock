@@ -12,6 +12,7 @@ import pandas as pd
 import ta
 import asyncio
 import json
+print("INFO: ZuraStock Backend V2 (Package Fix) - Starting Up...")
 from contextlib import asynccontextmanager
 import numpy as np
 from textblob import TextBlob
