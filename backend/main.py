@@ -4,6 +4,8 @@ from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect, Depends, HTT
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, EmailStr
+from passlib.context import CryptContext
 import os
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base, User, Watchlist, Portfolio, init_db, get_db
@@ -20,6 +22,24 @@ from .ml_engine import MLEngine
 from .ml_assistant import MLAssistant
 from datetime import datetime, time
 import pytz
+
+# --- Authentication Configuration ---
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class UserRegister(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 # Create a persistent session with curl_cffi to prevent rate limiting/blocking.
 # Using 'chrome120' impersonation to mimic a modern browser.
@@ -464,21 +484,82 @@ async def get_stocks(symbols: str = Query(None), sector: str = Query(None)):
 
 # --- DB Backed Endpoints ---
 
+# --- Authentication Endpoints ---
+
+@app.post("/api/auth/register")
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    # Check if email exists
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create new user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=get_password_hash(user_data.password)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {"id": new_user.id, "username": new_user.username, "email": new_user.email}
+
+@app.post("/api/auth/login")
+async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == credentials.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Handle both hashed and plain (for the demo user migration)
+    is_valid = False
+    if user.password_hash == credentials.password: # Plain check for legacy/demo
+        is_valid = True
+        # Upgrade to hash if valid
+        user.password_hash = get_password_hash(credentials.password)
+        db.commit()
+    elif verify_password(credentials.password, user.password_hash):
+        is_valid = True
+        
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+    return {"id": user.id, "username": user.username, "email": user.email}
+
 @app.get("/api/user")
-async def get_current_user(db: Session = Depends(get_db)):
-    # For demo, we just use the default user
-    user = db.query(User).filter(User.username == "demo_user").first()
-    return {"id": user.id, "username": user.username}
+async def get_current_user(user_id: int = Query(None), db: Session = Depends(get_db)):
+    if not user_id:
+        # Fallback for demo if no ID provided (legacy support)
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return {"id": user.id, "username": user.username, "email": user.email}
 
 @app.get("/api/db-watchlist")
-async def get_db_watchlist(db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == "demo_user").first()
+async def get_db_watchlist(user_id: int = Query(None), db: Session = Depends(get_db)):
+    if not user_id:
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user: return []
     items = db.query(Watchlist).filter(Watchlist.user_id == user.id).all()
     return [item.symbol for item in items]
 
 @app.post("/api/db-watchlist/toggle")
-async def toggle_db_watchlist(symbol: str = Body(..., embed=True), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == "demo_user").first()
+async def toggle_db_watchlist(symbol: str = Body(..., embed=True), user_id: int = Body(None, embed=True), db: Session = Depends(get_db)):
+    if not user_id:
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+    if not user: raise HTTPException(status_code=404, detail="User not found")
+    
     symbol = symbol.upper()
     existing = db.query(Watchlist).filter(Watchlist.user_id == user.id, Watchlist.symbol == symbol).first()
     
@@ -493,14 +574,25 @@ async def toggle_db_watchlist(symbol: str = Body(..., embed=True), db: Session =
         return {"status": "added", "symbol": symbol}
 
 @app.get("/api/db-portfolio")
-async def get_db_portfolio(db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == "demo_user").first()
+async def get_db_portfolio(user_id: int = Query(None), db: Session = Depends(get_db)):
+    if not user_id:
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+    if not user: return []
     items = db.query(Portfolio).filter(Portfolio.user_id == user.id).all()
     return [{"symbol": i.symbol, "quantity": i.quantity, "avg_price": i.avg_price} for i in items]
 
 @app.post("/api/db-portfolio/add")
-async def add_to_db_portfolio(symbol: str = Body(...), quantity: int = Body(...), price: float = Body(...), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == "demo_user").first()
+async def add_to_db_portfolio(symbol: str = Body(...), quantity: int = Body(...), price: float = Body(...), user_id: int = Body(None), db: Session = Depends(get_db)):
+    if not user_id:
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+    if not user: raise HTTPException(status_code=404, detail="User not found")
+    
     symbol = symbol.upper()
     
     # Simple logic: if exists, update avg price and qty, else create

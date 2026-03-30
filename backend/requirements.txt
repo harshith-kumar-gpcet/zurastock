@@ -43,3 +43,4 @@ yfinance==1.2.0
 gunicorn==23.0.0
 psycopg2-binary==2.9.10
 sqlalchemy==2.0.38
+passlib[bcrypt]==1.7.6

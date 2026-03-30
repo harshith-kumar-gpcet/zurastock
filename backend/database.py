@@ -23,7 +23,8 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
+    username = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -55,9 +56,9 @@ def init_db():
     # Create a default user for the demo if not exists
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.username == "demo_user").first()
+        user = db.query(User).filter(User.email == "demo@zurastock.com").first()
         if not user:
-            new_user = User(username="demo_user", password_hash="demo_pass") # In real app use hash
+            new_user = User(username="Demo User", email="demo@zurastock.com", password_hash="demo_pass") # In real app use hash
             db.add(new_user)
             db.commit()
             db.refresh(new_user)

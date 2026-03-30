@@ -9,6 +9,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="js/auth_guard.js"></script>
   <style>
     *,
     *::before,
@@ -720,7 +721,7 @@
   </div>
 
   <script>
-    function handleLogin() {
+    async function handleLogin() {
       const emailEl = document.getElementById('email');
       const pwdEl = document.getElementById('password');
 
@@ -729,30 +730,48 @@
         return;
       }
 
-      const email = emailEl.value;
-      const pwd = pwdEl.value;
-      let name = '';
-
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
-
-      if (users[email]) {
-        if (users[email].password !== pwd) {
-          alert('Incorrect password.');
-          return;
-        }
-        name = users[email].name;
-      } else {
-        // Fallback for demo accounts
-        name = email.split('@')[0];
-        name = name.replace(/[^a-zA-Z0-9]/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      }
-
-      localStorage.setItem('currentUser', JSON.stringify({ name, email }));
-
       showGlobalLoading('Syncing Profile', 'Taking you to your dashboard...');
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 800);
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailEl.value,
+            password: pwdEl.value
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Login failed');
+        }
+
+        const user = await response.json();
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 800);
+
+      } catch (err) {
+        hideGlobalLoading();
+        alert('Login Error: ' + err.message);
+      }
+    }
+    
+    function showGlobalLoading(title, subtitle) {
+      const loader = document.getElementById('globalLoader');
+      if (loader) {
+        loader.querySelector('.loading-title').textContent = title;
+        loader.querySelector('.loading-subtitle').textContent = subtitle;
+        loader.classList.add('active');
+      }
+    }
+
+    function hideGlobalLoading() {
+      const loader = document.getElementById('globalLoader');
+      if (loader) loader.classList.remove('active');
     }
   </script>
   <script src="js/main.js"></script>
