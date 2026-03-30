@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZuraStock — AI Portfolio Builder</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/extra_styles.css">
+  <link rel="stylesheet" href="css/zura_ai.css">
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div id="globalLoader" class="loading-overlay active">
+    <div class="loading-spinner-wrap">
+      <div class="spinner-outer"></div>
+      <div class="spinner-inner"></div>
+      <div class="loading-logo"><i class="fas fa-briefcase"></i></div>
+    </div>
+    <div class="loading-text-wrap">
+      <div class="loading-title">Initializing Studio</div>
+      <div class="loading-subtitle">Loading portfolio builder...</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-brand">
+      <div class="brand-icon-wrap"><i class="fas fa-chart-line"></i></div>
+      <span class="brand-text">ZuraStock</span>
+    </a>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Menu</span>
+
+      <a href="index.html" class="nav-link">
+        <i class="fas fa-th-large"></i> Dashboard
+      </a>
+      <a href="mutual-funds.html" class="nav-link">
+        <i class="fas fa-layer-group"></i> Mutual Funds
+      </a>
+      <a href="stock.html" class="nav-link">
+        <i class="fas fa-brain"></i> AI Analysis
+        <span class="nav-badge new">NEW</span>
+      </a>
+      <a href="portfolio.html" class="nav-link active">
+        <i class="fas fa-briefcase"></i> AI Portfolio
+      </a>
+      <a href="handbook.html" class="nav-link">
+        <i class="fas fa-book-open"></i> Trader's Handbook
+        <span class="nav-badge" style="background:var(--accent); color:#fff; font-size:0.6rem;">GUIDE</span>
+      </a>
+
+      <span class="nav-section-label" style="margin-top: 2rem;">Market Calendar</span>
+      <div class="market-calendar" id="marketCalendar">
+        <div class="mc-header">
+          <button id="mcPrevBtn"><i class="fas fa-chevron-left"></i></button>
+          <span id="mcMonthYear">Month Year</span>
+          <button id="mcNextBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="mc-weekdays">
+          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+        <div class="mc-days" id="mcDays"></div>
+        <div class="mc-legend">
+          <div class="mc-leg-item"><span class="mc-dot mc-open"></span>Open</div>
+          <div class="mc-leg-item"><span class="mc-dot mc-closed"></span>Closed</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">JD</div>
+        <div class="user-info">
+          <div class="user-name">John Doe</div>
+          <div class="user-role">Trader</div>
+        </div>
+        <i class="fas fa-ellipsis-h" style="font-size:0.8rem; color:var(--muted);"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN WRAPPER ─── -->
+  <div class="main-wrapper">
+
+    <!-- ─── HEADER ─── -->
+    <header class="top-header">
+      <div class="header-inner">
+        <div class="header-left">
+          <div class="page-label">Workspace / <span>AI Portfolio Builder</span></div>
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="globalSearch" placeholder="Search NSE stocks…">
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-action-btn" id="themeToggle"
+            style="width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--text-2); cursor: pointer; font-size: 0.85rem; transition: all 0.2s; position: relative;">
+            <i class="fas fa-moon"></i>
+          </div>
+          <a href="login.html"
+            style="color:var(--muted); text-decoration:none; font-size:0.85rem; padding:0.4rem 0.75rem; border:1.5px solid var(--border); border-radius:8px; transition:all 0.2s;"
+            onclick="localStorage.removeItem('currentUser')">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── PAGE CONTENT ─── -->
+    <div class="page-content" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 3rem;">
+        
+      <!-- WIZARD BOX -->
+      <div class="wizard-box" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05); margin-bottom: 3rem; border: 1px solid var(--border);">
+        <div id="wizardStep1" class="wizard-step active">
+          <div class="wizard-header">
+            <div class="step-indicator">Step 1 of 3</div>
+            <h2>Investment Amount</h2>
+            <p>How much capital do you want to start with?</p>
+          </div>
+          <div class="wizard-body">
+            <div class="amount-input-wrap">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="investAmount" placeholder="e.g. 50,000" min="1000">
+            </div>
+            <div class="quick-amounts">
+              <button onclick="setQuickAmount(10000)">₹10k</button>
+              <button onclick="setQuickAmount(50000)">₹50k</button>
+              <button onclick="setQuickAmount(100000)">₹1L</button>
+              <button onclick="setQuickAmount(500000)">₹5L</button>
+            </div>
+          </div>
+          <div class="wizard-footer">
+            <button class="btn-next" onclick="nextStep(2)">Next <i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+
+        <div id="wizardStep2" class="wizard-step">
+          <div class="wizard-header">
+            <div class="step-indicator">Step 2 of 3</div>
+            <h2>Risk Appetite</h2>
+            <p>Choose a strategy that matches your comfort level.</p>
+          </div>
+          <div class="wizard-body">
+            <div class="risk-options">
+              <label class="risk-card">
+                <input type="radio" name="investRisk" value="low">
+                <div class="risk-card-content">
+                  <i class="fas fa-shield-alt" style="color:var(--green);"></i>
+                  <div class="risk-info">
+                    <div class="risk-label">Conservative (Low)</div>
+                    <div class="risk-desc">Focus on dividends and stability (Blue-chips).</div>
+                  </div>
+                </div>
+              </label>
+              <label class="risk-card">
+                <input type="radio" name="investRisk" value="medium" checked>
+                <div class="risk-card-content">
+                  <i class="fas fa-balance-scale" style="color:var(--accent);"></i>
+                  <div class="risk-info">
+                    <div class="risk-label">Balanced (Medium)</div>
+                    <div class="risk-desc">Mix of growth and safety for steady returns.</div>
+                  </div>
+                </div>
+              </label>
+              <label class="risk-card">
+                <input type="radio" name="investRisk" value="high">
+                <div class="risk-card-content">
+                  <i class="fas fa-fire" style="color:var(--red);"></i>
+                  <div class="risk-info">
+                    <div class="risk-label">Aggressive (High)</div>
+                    <div class="risk-desc">Focus on high-growth mid-caps & momentum.</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div class="wizard-footer">
+            <button class="btn-back" onclick="nextStep(1)"><i class="fas fa-chevron-left"></i> Back</button>
+            <button class="btn-next" onclick="nextStep(3)">Next <i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+
+        <div id="wizardStep3" class="wizard-step">
+          <div class="wizard-header">
+            <div class="step-indicator">Step 3 of 3</div>
+            <h2>Time Horizon</h2>
+            <p>How long do you plan to stay invested?</p>
+          </div>
+          <div class="wizard-body">
+            <div class="horizon-options">
+              <label class="horizon-btn">
+                <input type="radio" name="investHorizon" value="short">
+                <span>Short-term (< 1 Year)</span>
+              </label>
+              <label class="horizon-btn">
+                <input type="radio" name="investHorizon" value="medium" checked>
+                <span>Medium-term (1-3 Years)</span>
+              </label>
+              <label class="horizon-btn">
+                <input type="radio" name="investHorizon" value="long">
+                <span>Long-term (> 3 Years)</span>
+              </label>
+            </div>
+          </div>
+          <div class="wizard-footer">
+            <button class="btn-back" onclick="nextStep(2)"><i class="fas fa-chevron-left"></i> Back</button>
+            <button class="btn-finish" id="generatePlanBtn" onclick="generateInvestPlan()">
+              Generate AI Plan <i class="fas fa-magic"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="wizardResult" class="wizard-step">
+          <!-- Results populated dynamically -->
+        </div>
+      </div>
+      <!-- /WIZARD BOX -->
+
+      <!-- FULL PAGE DASHBOARD RESULT -->
+      <div id="portfolioDashboardResult" class="portfolio-dashboard" style="display: none; width: 100%; max-width: 1200px;">
+        <!-- Dynamic content injected by JS -->
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrapper -->
+
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="js/main.js"></script>
+  <script src="js/portfolio.js"></script>
+  <script src="js/zura_ai.js"></script>
+</body>
+</html>

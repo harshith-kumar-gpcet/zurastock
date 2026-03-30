@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mutual Funds — ZuraStock</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/extra_styles.css">
+  <link rel="stylesheet" href="css/zura_ai.css">
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div id="globalLoader" class="loading-overlay">
+    <div class="loading-spinner-wrap">
+      <div class="spinner-outer"></div>
+      <div class="spinner-inner"></div>
+      <div class="loading-logo"><i class="fas fa-chart-line"></i></div>
+    </div>
+    <div class="loading-text-wrap">
+      <div class="loading-title">ZuraStock AI</div>
+      <div class="loading-subtitle">Fetching curated mutual funds...</div>
+    </div>
+  </div>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-brand">
+      <div class="brand-icon-wrap"><i class="fas fa-chart-line"></i></div>
+      <span class="brand-text">ZuraStock</span>
+    </a>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Menu</span>
+
+      <a href="index.html" class="nav-link">
+        <i class="fas fa-th-large"></i> Dashboard
+      </a>
+
+      <a href="mutual-funds.html" class="nav-link active">
+        <i class="fas fa-layer-group"></i> Mutual Funds
+      </a>
+      <a href="stock.html" class="nav-link">
+        <i class="fas fa-brain"></i> AI Analysis
+        <span class="nav-badge new">NEW</span>
+      </a>
+      <a href="portfolio.html" class="nav-link">
+        <i class="fas fa-briefcase"></i> AI Portfolio
+      </a>
+      <a href="handbook.html" class="nav-link">
+        <i class="fas fa-book-open"></i> Trader's Handbook
+        <span class="nav-badge" style="background:var(--accent); color:#fff; font-size:0.6rem;">GUIDE</span>
+      </a>
+
+      <span class="nav-section-label" style="margin-top: 2rem;">Market Calendar</span>
+      <div class="market-calendar" id="marketCalendar">
+        <div class="mc-header">
+          <button id="mcPrevBtn"><i class="fas fa-chevron-left"></i></button>
+          <span id="mcMonthYear">Month Year</span>
+          <button id="mcNextBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="mc-weekdays">
+          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+        <div class="mc-days" id="mcDays"></div>
+        <div class="mc-legend">
+          <div class="mc-leg-item"><span class="mc-dot mc-open"></span>Open</div>
+          <div class="mc-leg-item"><span class="mc-dot mc-closed"></span>Closed</div>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ─── MAIN WRAPPER ─── -->
+  <div class="main-wrapper">
+    <!-- ─── TOP HEADER ─── -->
+    <header class="top-header">
+      <div class="header-inner">
+        <div class="header-left">
+          <div class="page-label">Home / <span>Mutual Funds</span></div>
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="globalSearch" placeholder="Search Funds & ETFs…">
+          </div>
+        </div>
+        <div class="header-right">
+          <div id="themeToggle" class="header-action-btn"><i class="fas fa-moon"></i></div>
+          <div class="header-user">
+            <div class="h-avatar">JD</div>
+            <span class="h-user-name">John Doe</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Curated Mutual Funds & ETFs</h1>
+          <p>Explore index-tracking ETFs and sectoral funds with AI risk analysis.</p>
+        </div>
+      </div>
+
+      <!-- Fund Highlights -->
+      <div class="top-picks-container" style="margin-bottom: 2rem;">
+        <div class="top-picks-header">
+          <h2><i class="fas fa-star" style="color:var(--amber);"></i> Top Targeted Funds</h2>
+          <p>High-liquidity ETFs for long-term growth</p>
+        </div>
+        <div class="top-picks-grid" id="fundHighlights">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Main Fund Categories -->
+      <div class="sector-tabs" id="fundTabs">
+        <button class="sector-tab active-tab" data-filter="ALL" onclick="filterFunds('ALL')">All Funds</button>
+        <button class="sector-tab" data-filter="Large Cap" onclick="filterFunds('Large Cap')">Large Cap</button>
+        <button class="sector-tab" data-filter="Mid Cap" onclick="filterFunds('Mid Cap')">Mid Cap</button>
+        <button class="sector-tab" data-filter="Small Cap" onclick="filterFunds('Small Cap')">Small Cap</button>
+        <button class="sector-tab" data-filter="Sectoral" onclick="filterFunds('Sectoral')">Sectoral</button>
+        <button class="sector-tab" data-filter="Commodities" onclick="filterFunds('Commodities')">Commodities</button>
+      </div>
+
+      <!-- Funds Table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="table-card-title"><i class="fas fa-list"></i> Fund Universe</div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px;">Symbol</th>
+                <th>Fund Name & Details</th>
+                <th class="align-right">Live NAV (Price)</th>
+                <th class="align-right">24h Change</th>
+                <th class="align-right">Volume</th>
+                <th class="td-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fundGrid">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Minimal script to drive the Mutual Funds page
+    let allFundsData = [];
+    let currentFilter = 'ALL';
+    let watchlist = [];
+
+    // Fetch watchlist on load
+    async function fetchWatchlist() {
+        try {
+            const res = await fetch('/api/db-watchlist');
+            if (res.ok) {
+                watchlist = await res.json();
+                applyFilters();
+            }
+        } catch (e) {
+            watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        }
+    }
+
+    async function toggleWatchlist(symbol, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        try {
+            const res = await fetch('/api/db-watchlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol })
+            });
+            const data = await res.json();
+            if (data.status === 'added') {
+                if (!watchlist.includes(symbol)) watchlist.push(symbol);
+                showToast(`<i class="fas fa-heart"></i> ${symbol} added to watchlist`);
+            } else {
+                const index = watchlist.indexOf(symbol);
+                if (index > -1) watchlist.splice(index, 1);
+                showToast(`${symbol} removed from watchlist`, 'var(--muted)');
+            }
+        } catch (e) {
+            const index = watchlist.indexOf(symbol);
+            if (index > -1) watchlist.splice(index, 1);
+            else watchlist.push(symbol);
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        }
+        applyFilters();
+    }
+
+    function getLogoColors(symbol) {
+        const colors = [
+            ['#4361ee', '#7B3FE4'], ['#05cd99', '#00a896'], ['#ee5d50', '#f72585'],
+            ['#f77f00', '#f4a261'], ['#3a86ff', '#4cc9f0'], ['#8338ec', '#ff006e']
+        ];
+        let hash = 0;
+        for (let c of symbol) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
+    }
+
+    async function initMutualFunds() {
+        showGlobalLoading("Mutual Funds", "Fetching latest NAV and price data...");
+        try {
+            const res = await fetch('/api/stocks?sector=Mutual Funds');
+            const res2 = await fetch('/api/stocks?sector=Commodities');
+            const data1 = await res.json();
+            const data2 = await res2.json();
+            
+            // Safety: Ensure both are treated as arrays
+            const list1 = Array.isArray(data1) ? data1 : (data1 ? Object.values(data1) : []);
+            const list2 = Array.isArray(data2) ? data2 : (data2 ? Object.values(data2) : []);
+            
+            allFundsData = [...list1, ...list2];
+            
+            applyFilters();
+            renderHighlights(allFundsData.slice(0, 4));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            hideGlobalLoading();
+        }
+    }
+
+    function filterFunds(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.sector-tab').forEach(tab => {
+            tab.classList.toggle('active-tab', tab.getAttribute('data-filter') === filter);
+        });
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+        const filtered = allFundsData.filter(f => {
+            const sym = (f.symbol || "").toLowerCase();
+            const name = (f.name || "").toLowerCase();
+            const matchesSearch = sym.includes(searchTerm) || name.includes(searchTerm);
+            
+            if (currentFilter === 'ALL') return matchesSearch;
+            
+            // Filter by cap or sector
+            if (currentFilter === 'Large Cap') return matchesSearch && f.cap === 'Large Cap';
+            if (currentFilter === 'Mid Cap') return matchesSearch && f.cap === 'Mid Cap';
+            if (currentFilter === 'Small Cap') return matchesSearch && f.cap === 'Small Cap';
+            if (currentFilter === 'Sectoral') return matchesSearch && f.cap === 'Sectoral';
+            if (currentFilter === 'Commodities') return matchesSearch && f.sector === 'Commodities';
+            
+            return matchesSearch;
+        });
+
+        // Fallback: If no results and search looks like a ticker, suggest custom search
+        if (filtered.length === 0 && searchTerm.length >= 3) {
+            handleNoResults(searchTerm);
+            return;
+        }
+        
+        renderFunds(filtered);
+    }
+
+    async function handleNoResults(term) {
+        const grid = document.getElementById('fundGrid');
+        grid.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div style="padding: 2rem; text-align: center; color: var(--muted);">
+                        <i class="fas fa-search-minus" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <p>No funds found matching "<strong>${term}</strong>"</p>
+                        <button class="predict-btn" style="margin-top: 1rem; cursor: pointer;" onclick="searchNewFund('${term}')">
+                            <i class="fas fa-cloud-download-alt"></i> Search Global Database
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    async function searchNewFund(symbol) {
+        showGlobalLoading("AI Search", `Fetching data for ${symbol}...`);
+        try {
+            const res = await fetch(`/api/stocks?symbols=${symbol.toUpperCase()}`);
+            const data = await res.json();
+            const stock = data[symbol.toUpperCase()];
+            if (stock && stock.price) {
+                // Add to our local list temporarily
+                allFundsData.push(stock);
+                applyFilters();
+            } else {
+                alert("Fund not found. Please try a valid ticker (e.g. MOM150, NIFTYBEES)");
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            hideGlobalLoading();
+        }
+    }
+
+    // Search input listener
+    document.getElementById('globalSearch').addEventListener('input', applyFilters);
+
+    function renderFunds(funds) {
+        const grid = document.getElementById('fundGrid');
+        if (funds.length === 0) {
+            grid.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:3rem; text-align:center; color:var(--muted);">
+                <i class="fas fa-search-minus" style="font-size:2rem; margin-bottom:1rem; display:block;"></i>
+                No funds found matching your criteria.
+            </div></td></tr>`;
+            return;
+        }
+
+        grid.innerHTML = funds.map(f => {
+            const isPositive = f.changePercent >= 0;
+            const prefix = isPositive ? '+' : '';
+            const isFav = watchlist.includes(f.symbol);
+            const [c1, c2] = getLogoColors(f.symbol);
+            const initials = f.symbol.slice(0, 2).toUpperCase();
+
+            return `
+                <tr>
+                    <td>
+                        <div class="symbol-cell">
+                            <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleWatchlist('${f.symbol}', event)" title="${isFav ? 'Remove from watchlist' : 'Add to watchlist'}">
+                                <i class="fa${isFav ? 's' : 'r'} fa-heart"></i>
+                            </button>
+                            <div class="stock-logo" style="background:linear-gradient(135deg,${c1},${c2})">${initials}</div>
+                            <span class="sym-badge">${f.symbol}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="co-name">${f.name}</div>
+                        <div class="co-sector" style="font-size:0.72rem; color:var(--muted)">${f.cap || 'Featured Fund'} • ${f.sector}</div>
+                    </td>
+                    <td class="td-right">
+                        <span class="price-cell">₹${f.price ? f.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span class="loading-dots">Syncing</span>'}</span>
+                    </td>
+                    <td class="td-right">
+                        <span class="chg-pill ${isPositive ? 'pos' : 'neg'}">
+                            <i class="fas fa-caret-${isPositive ? 'up' : 'down'}"></i>
+                            ${prefix}${f.changePercent ? f.changePercent.toFixed(2) : '0.00'}%
+                        </span>
+                    </td>
+                    <td class="td-right"><span class="vol-cell">${f.volume || '—'}</span></td>
+                    <td class="td-center">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                            <button class="refresh-btn" onclick="searchNewFund('${f.symbol}')" title="Refresh ${f.symbol}" style="background:none; border:none; color:var(--muted); cursor:pointer; padding:5px; transition:0.2s;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <a href="stock.html?symbol=${f.symbol}" class="predict-btn">
+                                <i class="fas fa-brain"></i> Predict
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Initialize watchlist
+    fetchWatchlist();
+
+    function renderHighlights(funds) {
+        const track = document.getElementById('fundHighlights');
+        if (!track) return;
+        track.innerHTML = funds.map(f => `
+            <div class="top-pick-card" onclick="window.location.href='stock.html?symbol=${f.symbol}'">
+                <div class="pick-header">
+                    <div class="pick-sym">${f.symbol}</div>
+                    <div class="pick-badge">ETF</div>
+                </div>
+                <div class="pick-name">${f.name}</div>
+                <div class="pick-footer">
+                    <div class="pick-price">₹${f.price ? f.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</div>
+                    <div class="pick-signal sig-buy">
+                        ${f.changePercent >= 0 ? '+' : ''}${f.changePercent ? f.changePercent.toFixed(2) : '0.00'}%
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', initMutualFunds);
+  </script>
+  <script src="js/zura_ai.js"></script>
+</body>
+</html>
